@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/supabase';
+import { useToast } from './use-toast';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  signUp: (email: string, password: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<Session | null>;
+  signIn: (email: string, password: string) => Promise<Session | null>;
   signOut: () => Promise<void>;
 }
 
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Check if user is already logged in
@@ -36,6 +38,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.debug('[useAuth] auth event', event, session);
+        // show toast for major auth events to help debugging multi-device issues
+        if (event === 'SIGNED_IN') {
+          toast({ title: 'Signed in', description: 'Signed in on this device' });
+        } else if (event === 'SIGNED_OUT') {
+          toast({ title: 'Signed out', description: 'Signed out on this device', variant: 'destructive' });
+        } else if (event === 'TOKEN_REFRESHED') {
+          toast({ title: 'Session refreshed' });
+        }
         setUser(session?.user ?? null);
       }
     );
@@ -52,7 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
     });
 
-    if (signUpError) throw signUpError;
+    if (signUpError) {
+      toast({ title: 'Sign up failed', description: signUpError.message, variant: 'destructive' });
+      throw signUpError;
+    }
 
     // Auto-login after sign up (bypasses email confirmation)
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
@@ -60,11 +73,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
     });
 
-    if (signInError) throw signInError;
+    if (signInError) {
+      toast({ title: 'Sign in failed', description: signInError.message, variant: 'destructive' });
+      throw signInError;
+    }
 
     // Update local user state if session returned
     const session = signInData?.session ?? signUpData?.session;
     console.debug('[useAuth] signUp session', session);
+    toast({ title: 'Signed up', description: 'Account created and signed in' });
     setUser(session?.user ?? null);
     return session ?? null;
   };
@@ -75,9 +92,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
     });
 
-    if (error) throw error;
+    if (error) {
+      toast({ title: 'Sign in failed', description: error.message, variant: 'destructive' });
+      throw error;
+    }
 
     console.debug('[useAuth] signIn data', data);
+    toast({ title: 'Signed in', description: 'Welcome back' });
     setUser(data?.session?.user ?? null);
     return data?.session ?? null;
   };
@@ -85,6 +106,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    toast({ title: 'Signed out', description: 'You have been signed out', variant: 'destructive' });
+    setUser(null);
   };
 
   return (
