@@ -56,29 +56,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string) => {
-    // Sign up the user
+    // Try signup
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
+      options: { emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined },
     });
 
-    if (signUpError) {
+    // Allow user_already_exists (retry case)
+    if (signUpError && signUpError.code !== 'user_already_exists') {
       toast({ title: 'Sign up failed', description: signUpError.message, variant: 'destructive' });
       throw signUpError;
     }
 
-    // Auto-login after sign up (bypasses email confirmation)
+    // Wait for email auto-confirmation (if enabled in Supabase)
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Attempt sign in
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (signInError) {
-      toast({ title: 'Sign in failed', description: signInError.message, variant: 'destructive' });
+      if (signInError.code === 'email_not_confirmed') {
+        toast({
+          title: 'Email confirmation required',
+          description: 'Check Supabase Dashboard → Authentication → Settings and toggle OFF "Require email confirmation"',
+          variant: 'destructive',
+        });
+      } else {
+        toast({ title: 'Sign in failed', description: signInError.message, variant: 'destructive' });
+      }
       throw signInError;
     }
 
-    // Update local user state if session returned
     const session = signInData?.session ?? signUpData?.session;
     console.debug('[useAuth] signUp session', session);
     toast({ title: 'Signed up', description: 'Account created and signed in' });

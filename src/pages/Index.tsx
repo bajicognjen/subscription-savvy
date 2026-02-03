@@ -10,6 +10,7 @@ import { SubscriptionDialog } from '@/components/SubscriptionDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Plus, CreditCard, LogOut } from 'lucide-react';
+import SessionInspector from '@/components/SessionInspector';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -110,6 +111,9 @@ const Index = () => {
               <LogOut className="h-4 w-4" />
               <span className="hidden sm:inline">Sign Out</span>
             </Button>
+            <div className="hidden sm:block">
+              <SessionInspector />
+            </div>
           </div>
         </div>
       </header>
