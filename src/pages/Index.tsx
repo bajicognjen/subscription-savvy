@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
+import { useAuth } from '@/hooks/useAuth';
 import { Subscription } from '@/types/subscription';
 import { MonthlyTotalCard } from '@/components/MonthlyTotalCard';
 import { SubscriptionCard } from '@/components/SubscriptionCard';
@@ -8,12 +9,15 @@ import { UpcomingRenewals } from '@/components/UpcomingRenewals';
 import { SubscriptionDialog } from '@/components/SubscriptionDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
-import { Plus, CreditCard } from 'lucide-react';
+import { Plus, CreditCard, LogOut } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
   const {
     subscriptions,
     isLoaded,
+    isLoading,
     addSubscription,
     updateSubscription,
     deleteSubscription,
@@ -23,6 +27,9 @@ const Index = () => {
     getCategorySpending,
   } = useSubscriptions();
 
+  const { signOut } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
 
@@ -36,19 +43,37 @@ const Index = () => {
     setDialogOpen(true);
   };
 
-  const handleSave = (data: Omit<Subscription, 'id' | 'createdAt'>) => {
+  const handleSave = async (data: Omit<Subscription, 'id' | 'createdAt'>) => {
     if (editingSubscription) {
-      updateSubscription(editingSubscription.id, data);
+      await updateSubscription(editingSubscription.id, data);
     } else {
-      addSubscription(data);
+      await addSubscription(data);
+    }
+    setDialogOpen(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteSubscription(id);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/auth');
+      toast({
+        title: 'Success',
+        description: 'You have been signed out',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to sign out',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleDelete = (id: string) => {
-    deleteSubscription(id);
-  };
-
-  if (!isLoaded) {
+  if (!isLoaded || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
@@ -71,10 +96,21 @@ const Index = () => {
             </div>
             <h1 className="text-xl font-bold">SubTracker</h1>
           </div>
-          <Button onClick={handleAddClick} size="sm" className="gap-2">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Add Subscription</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={handleAddClick} size="sm" className="gap-2">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add Subscription</span>
+            </Button>
+            <Button 
+              onClick={handleSignOut} 
+              size="sm" 
+              variant="ghost"
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </Button>
+          </div>
         </div>
       </header>
 
