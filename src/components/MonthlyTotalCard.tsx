@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp, DollarSign } from 'lucide-react';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface MonthlyTotalCardProps {
   total: number;
@@ -7,6 +8,9 @@ interface MonthlyTotalCardProps {
 }
 
 export function MonthlyTotalCard({ total, subscriptionCount }: MonthlyTotalCardProps) {
+  const { convert, getSymbol } = useCurrency();
+  const convertedTotal = convert(total);
+
   return (
     <Card className="relative overflow-hidden gradient-primary shadow-card border-0">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
@@ -17,7 +21,7 @@ export function MonthlyTotalCard({ total, subscriptionCount }: MonthlyTotalCardP
               Monthly Spending
             </p>
             <p className="text-4xl font-bold text-primary-foreground tracking-tight">
-              ${total.toFixed(2)}
+              {getSymbol()}{convertedTotal.toFixed(2)}
             </p>
             <p className="text-primary-foreground/70 text-sm mt-2">
               {subscriptionCount} active subscription{subscriptionCount !== 1 ? 's' : ''}

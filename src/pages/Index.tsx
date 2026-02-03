@@ -11,6 +11,8 @@ import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Plus, CreditCard, LogOut } from 'lucide-react';
 import SessionInspector from '@/components/SessionInspector';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { CurrencySelector } from '@/components/CurrencySelector';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -98,10 +100,12 @@ const Index = () => {
             <h1 className="text-xl font-bold">SubTracker</h1>
           </div>
           <div className="flex items-center gap-2">
+            <CurrencySelector />
             <Button onClick={handleAddClick} size="sm" className="gap-2">
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Add Subscription</span>
             </Button>
+            <ThemeToggle />
             <Button 
               onClick={handleSignOut} 
               size="sm" 

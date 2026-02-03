@@ -27,12 +27,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Subscription, CATEGORIES, Category, BillingCycle } from '@/types/subscription';
+import { useCurrency, type Currency } from '@/hooks/useCurrency';
 import { format } from 'date-fns';
+
+const EXCHANGE_RATES: Record<Currency, number> = {
+  USD: 1,
+  EUR: 0.85,
+  RSD: 99.1,
+};
 
 const subscriptionSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   category: z.enum(['Streaming', 'Software', 'Fitness', 'Gaming', 'Other']),
   price: z.coerce.number().positive('Price must be positive'),
+  priceCurrency: z.enum(['USD', 'EUR', 'RSD']),
   billingCycle: z.enum(['weekly', 'monthly', 'yearly']),
   renewalDate: z.string().min(1, 'Renewal date is required'),
   paymentMethod: z.string().optional(),
@@ -55,6 +63,7 @@ export function SubscriptionDialog({
   onSave,
 }: SubscriptionDialogProps) {
   const isEditing = !!subscription;
+  const [inputCurrency, setInputCurrency] = useState<Currency>('USD');
 
   const form = useForm<FormData>({
     resolver: zodResolver(subscriptionSchema),
@@ -62,6 +71,7 @@ export function SubscriptionDialog({
       name: '',
       category: 'Other',
       price: 0,
+      priceCurrency: 'USD',
       billingCycle: 'monthly',
       renewalDate: format(new Date(), 'yyyy-MM-dd'),
       paymentMethod: '',
@@ -75,29 +85,41 @@ export function SubscriptionDialog({
         name: subscription.name,
         category: subscription.category,
         price: subscription.price,
+        priceCurrency: 'USD',
         billingCycle: subscription.billingCycle,
         renewalDate: subscription.renewalDate.split('T')[0],
         paymentMethod: subscription.paymentMethod || '',
         notes: subscription.notes || '',
       });
+      setInputCurrency('USD');
     } else {
       form.reset({
         name: '',
         category: 'Other',
         price: 0,
+        priceCurrency: 'USD',
         billingCycle: 'monthly',
         renewalDate: format(new Date(), 'yyyy-MM-dd'),
         paymentMethod: '',
         notes: '',
       });
+      setInputCurrency('USD');
     }
   }, [subscription, form]);
 
+  const convertToUSD = (amount: number, fromCurrency: Currency): number => {
+    // Convert from any currency to USD
+    return amount / EXCHANGE_RATES[fromCurrency];
+  };
+
   const onSubmit = (data: FormData) => {
+    // Convert price to USD based on selected input currency
+    const priceInUSD = convertToUSD(data.price, inputCurrency);
+
     onSave({
       name: data.name,
       category: data.category as Category,
-      price: data.price,
+      price: priceInUSD,
       billingCycle: data.billingCycle as BillingCycle,
       renewalDate: data.renewalDate,
       paymentMethod: data.paymentMethod || undefined,
@@ -183,25 +205,42 @@ export function SubscriptionDialog({
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Price ($)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="9.99"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+              <div className="space-y-2">
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="9.99"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Select value={inputCurrency} onValueChange={(value) => setInputCurrency(value as Currency)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                    <SelectItem value="RSD">RSD (дин)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {inputCurrency !== 'USD' && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ≈ ${(form.watch('price') / EXCHANGE_RATES[inputCurrency]).toFixed(2)} USD
+                  </p>
                 )}
-              />
+              </div>
               
               <FormField
                 control={form.control}

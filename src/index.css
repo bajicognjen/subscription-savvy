@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,87 +6,136 @@
 
 @layer base {
   :root {
-    --background: 180 20% 98%;
-    --foreground: 180 40% 10%;
+    /* Dark modern theme - darker backgrounds */
+    --background: 220 13% 8%;
+    --foreground: 220 13% 94%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 180 40% 10%;
+    --card: 220 14% 14%;
+    --card-foreground: 220 13% 94%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 180 40% 10%;
+    --popover: 220 14% 14%;
+    --popover-foreground: 220 13% 94%;
 
-    --primary: 168 80% 28%;
-    --primary-foreground: 0 0% 100%;
+    /* Vibrant cyan/teal primary */
+    --primary: 180 100% 50%;
+    --primary-foreground: 220 13% 8%;
 
-    --secondary: 180 15% 94%;
-    --secondary-foreground: 180 40% 10%;
+    /* Subtle secondary */
+    --secondary: 220 15% 22%;
+    --secondary-foreground: 220 13% 94%;
 
-    --muted: 180 10% 92%;
-    --muted-foreground: 180 10% 45%;
+    /* Muted grays */
+    --muted: 220 12% 28%;
+    --muted-foreground: 220 10% 65%;
 
-    --accent: 35 95% 55%;
-    --accent-foreground: 35 100% 15%;
+    /* Vibrant purple accent */
+    --accent: 270 100% 60%;
+    --accent-foreground: 220 13% 8%;
 
-    --destructive: 0 72% 51%;
+    /* Red destructive */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 180 15% 88%;
-    --input: 180 15% 88%;
-    --ring: 168 80% 28%;
+    /* Dark borders */
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 180 100% 50%;
 
     --radius: 0.75rem;
 
-    /* Chart colors for categories */
-    --chart-streaming: 340 75% 55%;
-    --chart-software: 200 85% 50%;
-    --chart-fitness: 145 70% 45%;
-    --chart-gaming: 270 70% 60%;
-    --chart-other: 180 20% 50%;
+    /* Chart colors - vibrant palette */
+    --chart-streaming: 15 100% 60%;
+    --chart-software: 180 100% 50%;
+    --chart-fitness: 120 100% 50%;
+    --chart-gaming: 280 100% 55%;
+    --chart-other: 40 100% 50%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(168, 80%, 28%) 0%, hsl(180, 70%, 35%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(35, 95%, 55%) 0%, hsl(25, 95%, 50%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0, 0%, 100%) 0%, hsl(180, 20%, 98%) 100%);
+    /* Modern gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(180, 100%, 50%) 0%, hsl(200, 90%, 45%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(270, 100%, 60%) 0%, hsl(280, 95%, 55%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(220, 14%, 14%) 0%, hsl(220, 14%, 18%) 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(180 20% 10% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(180 20% 10% / 0.07), 0 2px 4px -2px hsl(180 20% 10% / 0.05);
-    --shadow-lg: 0 10px 15px -3px hsl(180 20% 10% / 0.08), 0 4px 6px -4px hsl(180 20% 10% / 0.05);
-    --shadow-card: 0 4px 20px -4px hsl(168 80% 28% / 0.12);
-    --shadow-glow: 0 0 20px hsl(168 80% 28% / 0.25);
+    /* Modern shadows with depth */
+    --shadow-sm: 0 2px 4px 0 hsl(220 8% 2% / 0.2);
+    --shadow-md: 0 4px 12px -2px hsl(220 8% 2% / 0.3), 0 2px 6px -2px hsl(220 8% 2% / 0.2);
+    --shadow-lg: 0 12px 24px -4px hsl(220 8% 2% / 0.4), 0 4px 10px -4px hsl(220 8% 2% / 0.2);
+    --shadow-card: 0 8px 24px -6px hsl(180 100% 50% / 0.15);
+    --shadow-glow: 0 0 30px hsl(180 100% 50% / 0.25);
   }
 
   .dark {
-    --background: 180 30% 6%;
-    --foreground: 180 10% 95%;
+    /* Already set to dark, these are overrides if needed */
+    --background: 220 13% 8%;
+    --foreground: 220 13% 94%;
 
-    --card: 180 25% 10%;
-    --card-foreground: 180 10% 95%;
+    --card: 220 14% 14%;
+    --card-foreground: 220 13% 94%;
 
-    --popover: 180 25% 10%;
-    --popover-foreground: 180 10% 95%;
+    --popover: 220 14% 14%;
+    --popover-foreground: 220 13% 94%;
 
-    --primary: 168 75% 45%;
-    --primary-foreground: 180 30% 6%;
+    --primary: 180 100% 50%;
+    --primary-foreground: 220 13% 8%;
 
-    --secondary: 180 20% 15%;
-    --secondary-foreground: 180 10% 95%;
+    --secondary: 220 15% 22%;
+    --secondary-foreground: 220 13% 94%;
 
-    --muted: 180 15% 18%;
-    --muted-foreground: 180 10% 60%;
+    --muted: 220 12% 28%;
+    --muted-foreground: 220 10% 65%;
 
-    --accent: 35 90% 55%;
-    --accent-foreground: 35 100% 10%;
+    --accent: 270 100% 60%;
+    --accent-foreground: 220 13% 8%;
 
-    --destructive: 0 65% 45%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 180 20% 18%;
-    --input: 180 20% 18%;
-    --ring: 168 75% 45%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 180 100% 50%;
 
-    --shadow-card: 0 4px 20px -4px hsl(168 75% 45% / 0.15);
-    --shadow-glow: 0 0 20px hsl(168 75% 45% / 0.3);
+    --shadow-card: 0 8px 24px -6px hsl(180 100% 50% / 0.2);
+    --shadow-glow: 0 0 30px hsl(180 100% 50% / 0.35);
+  }
+
+  /* Light theme */
+  html:not(.dark) {
+    /* Light backgrounds */
+    --background: 0 0% 100%;
+    --foreground: 220 13% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 8%;
+
+    /* Vibrant cyan primary */
+    --primary: 180 100% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Light secondary */
+    --secondary: 220 15% 90%;
+    --secondary-foreground: 220 13% 8%;
+
+    /* Muted grays */
+    --muted: 220 12% 75%;
+    --muted-foreground: 220 10% 40%;
+
+    /* Vibrant purple accent */
+    --accent: 270 100% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Red destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Light borders */
+    --border: 220 15% 85%;
+    --input: 220 15% 90%;
+    --ring: 180 100% 45%;
+
+    --shadow-card: 0 8px 24px -6px hsl(180 100% 45% / 0.12);
+    --shadow-glow: 0 0 30px hsl(180 100% 45% / 0.15);
   }
 }
 
