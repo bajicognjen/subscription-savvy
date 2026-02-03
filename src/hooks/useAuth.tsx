@@ -21,6 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const getSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        console.debug('[useAuth] initial session', session);
         setUser(session?.user ?? null);
       } catch (error) {
         console.error('Error getting session:', error);
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.debug('[useAuth] auth event', event, session);
         setUser(session?.user ?? null);
       }
     );
@@ -45,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string) => {
     // Sign up the user
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -53,21 +55,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (signUpError) throw signUpError;
 
     // Auto-login after sign up (bypasses email confirmation)
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (signInError) throw signInError;
+
+    // Update local user state if session returned
+    const session = signInData?.session ?? signUpData?.session;
+    console.debug('[useAuth] signUp session', session);
+    setUser(session?.user ?? null);
+    return session ?? null;
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) throw error;
+
+    console.debug('[useAuth] signIn data', data);
+    setUser(data?.session?.user ?? null);
+    return data?.session ?? null;
   };
 
   const signOut = async () => {
