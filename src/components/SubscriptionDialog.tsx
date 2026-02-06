@@ -26,25 +26,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Subscription, CATEGORIES, Category, BillingCycle } from '@/types/subscription';
-import { useCurrency, type Currency } from '@/hooks/useCurrency';
+import { Subscription, CATEGORIES, Category, BillingCycle, SubscriptionStatus } from '@/types/subscription';
+import { type Currency, useCurrency } from '@/hooks/useCurrency';
 import { format } from 'date-fns';
-
-const EXCHANGE_RATES: Record<Currency, number> = {
-  USD: 1,
-  EUR: 0.85,
-  RSD: 99.1,
-};
 
 const subscriptionSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   category: z.enum(['Streaming', 'Software', 'Fitness', 'Gaming', 'Other']),
   price: z.coerce.number().positive('Price must be positive'),
-  priceCurrency: z.enum(['USD', 'EUR', 'RSD']),
+  priceCurrency: z.enum(['USD', 'EUR', 'RSD']).optional(),
   billingCycle: z.enum(['weekly', 'monthly', 'yearly']),
   renewalDate: z.string().min(1, 'Renewal date is required'),
   paymentMethod: z.string().optional(),
   notes: z.string().max(500).optional(),
+  status: z.enum(['active', 'paused', 'cancelled']).default('active'),
 });
 
 type FormData = z.infer<typeof subscriptionSchema>;
@@ -53,6 +48,7 @@ interface SubscriptionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   subscription?: Subscription | null;
+  existingSubscriptions?: Subscription[];
   onSave: (data: Omit<Subscription, 'id' | 'createdAt'>) => void;
 }
 
@@ -60,10 +56,13 @@ export function SubscriptionDialog({
   open,
   onOpenChange,
   subscription,
+  existingSubscriptions = [],
   onSave,
 }: SubscriptionDialogProps) {
   const isEditing = !!subscription;
   const [inputCurrency, setInputCurrency] = useState<Currency>('USD');
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
+  const { formatAmount } = useCurrency();
 
   const form = useForm<FormData>({
     resolver: zodResolver(subscriptionSchema),
@@ -71,11 +70,11 @@ export function SubscriptionDialog({
       name: '',
       category: 'Other',
       price: 0,
-      priceCurrency: 'USD',
       billingCycle: 'monthly',
       renewalDate: format(new Date(), 'yyyy-MM-dd'),
       paymentMethod: '',
       notes: '',
+      status: 'active',
     },
   });
 
@@ -84,14 +83,16 @@ export function SubscriptionDialog({
       form.reset({
         name: subscription.name,
         category: subscription.category,
-        price: subscription.price,
-        priceCurrency: 'USD',
+        // show original price if present, otherwise show normalized USD price
+        price: subscription.priceOriginal ?? subscription.price,
+        priceCurrency: subscription.currency ?? 'USD',
         billingCycle: subscription.billingCycle,
         renewalDate: subscription.renewalDate.split('T')[0],
         paymentMethod: subscription.paymentMethod || '',
         notes: subscription.notes || '',
+        status: subscription.status || 'active',
       });
-      setInputCurrency('USD');
+      setInputCurrency(subscription.currency ?? 'USD');
     } else {
       form.reset({
         name: '',
@@ -102,31 +103,58 @@ export function SubscriptionDialog({
         renewalDate: format(new Date(), 'yyyy-MM-dd'),
         paymentMethod: '',
         notes: '',
+        status: 'active',
       });
       setInputCurrency('USD');
     }
   }, [subscription, form]);
 
-  const convertToUSD = (amount: number, fromCurrency: Currency): number => {
-    // Convert from any currency to USD
-    return amount / EXCHANGE_RATES[fromCurrency];
+  // Exchange rates relative to USD (user-provided values)
+  const EXCHANGE_RATES: Record<Currency, number> = {
+    USD: 1,
+    EUR: 0.85,
+    RSD: 99.1,
+  };
+
+  const convertToUSD = (amount: number, from: Currency) => {
+    // amount in `from` -> USD
+    return amount / EXCHANGE_RATES[from];
   };
 
   const onSubmit = (data: FormData) => {
-    // Convert price to USD based on selected input currency
-    const priceInUSD = convertToUSD(data.price, inputCurrency);
+    // Check for duplicates (case-insensitive)
+    const isDuplicate = existingSubscriptions.some(
+      (sub) =>
+        sub.name.toLowerCase() === data.name.toLowerCase() &&
+        sub.id !== subscription?.id // allow editing same subscription
+    );
+
+    if (isDuplicate) {
+      setDuplicateWarning(true);
+      return;
+    }
+
+    const currency = (data as any).priceCurrency ?? inputCurrency ?? 'USD';
+    const priceOriginal = Number(data.price);
+    const priceInUSD = convertToUSD(priceOriginal, currency as Currency);
 
     onSave({
       name: data.name,
       category: data.category as Category,
       price: priceInUSD,
+      // persist original
+      priceOriginal: priceOriginal,
+      currency: currency as Currency,
       billingCycle: data.billingCycle as BillingCycle,
       renewalDate: data.renewalDate,
       paymentMethod: data.paymentMethod || undefined,
       notes: data.notes || undefined,
-    });
+      status: (data as any).status || 'active',
+    } as any);
     onOpenChange(false);
     form.reset();
+    setInputCurrency('USD');
+    setDuplicateWarning(false);
   };
 
   return (
@@ -137,6 +165,23 @@ export function SubscriptionDialog({
             {isEditing ? 'Edit Subscription' : 'Add Subscription'}
           </DialogTitle>
         </DialogHeader>
+        
+        {duplicateWarning && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 text-sm">
+            <p className="text-destructive font-medium">
+              ⚠️ A subscription with this name already exists
+            </p>
+            <p className="text-destructive/80 text-xs mt-1">
+              Are you sure you want to add a duplicate?
+            </p>
+            <button
+              className="text-destructive/60 hover:text-destructive text-xs underline mt-2"
+              onClick={() => setDuplicateWarning(false)}
+            >
+              Dismiss &amp; continue anyway
+            </button>
+          </div>
+        )}
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -205,7 +250,7 @@ export function SubscriptionDialog({
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div>
                 <FormField
                   control={form.control}
                   name="price"
@@ -225,23 +270,29 @@ export function SubscriptionDialog({
                     </FormItem>
                   )}
                 />
-                <Select value={inputCurrency} onValueChange={(value) => setInputCurrency(value as Currency)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USD">USD ($)</SelectItem>
-                    <SelectItem value="EUR">EUR (€)</SelectItem>
-                    <SelectItem value="RSD">RSD (дин)</SelectItem>
-                  </SelectContent>
-                </Select>
+
+                <div className="mt-2">
+                  <Select value={inputCurrency} onValueChange={(v) => setInputCurrency(v as Currency)}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="USD">USD ($)</SelectItem>
+                      <SelectItem value="EUR">EUR (€)</SelectItem>
+                      <SelectItem value="RSD">RSD (дин)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {inputCurrency !== 'USD' && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    ≈ ${(form.watch('price') / EXCHANGE_RATES[inputCurrency]).toFixed(2)} USD
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ≈ {formatAmount((Number(form.watch('price') || 0) / (inputCurrency === 'EUR' ? 0.85 : 99.1)), 'USD')}
                   </p>
                 )}
               </div>
-              
+
               <FormField
                 control={form.control}
                 name="renewalDate"
@@ -285,6 +336,29 @@ export function SubscriptionDialog({
                       {...field}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="paused">Paused</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

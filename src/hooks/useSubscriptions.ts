@@ -44,11 +44,16 @@ export function useSubscriptions() {
         id: sub.id,
         name: sub.name,
         category: sub.category,
-        price: sub.price,
+        // normalized USD price
+        price: Number(sub.price),
+        // preserve original entered amount and currency if available
+        priceOriginal: sub.price_original ? Number(sub.price_original) : undefined,
+        currency: sub.currency || undefined,
         billingCycle: sub.billing_cycle,
         renewalDate: sub.renewal_date,
         paymentMethod: sub.payment_method,
         notes: sub.notes,
+        status: sub.status || 'active',
         createdAt: sub.created_at,
       }));
 
@@ -85,11 +90,16 @@ export function useSubscriptions() {
             user_id: user.id,
             name: subscription.name,
             category: subscription.category,
+            // store normalized USD price in `price`
             price: subscription.price,
+            // store original entered amount and currency if provided
+            price_original: (subscription as any).priceOriginal ?? null,
+            currency: (subscription as any).currency ?? null,
             billing_cycle: subscription.billingCycle,
             renewal_date: subscription.renewalDate,
             payment_method: subscription.paymentMethod,
             notes: subscription.notes,
+            status: subscription.status || 'active',
           },
         ])
         .select()
@@ -110,10 +120,13 @@ export function useSubscriptions() {
         name: data.name,
         category: data.category,
         price: data.price,
+        priceOriginal: data.price_original ? Number(data.price_original) : undefined,
+        currency: data.currency || undefined,
         billingCycle: data.billing_cycle,
         renewalDate: data.renewal_date,
         paymentMethod: data.payment_method,
         notes: data.notes,
+        status: data.status || 'active',
         createdAt: data.created_at,
       };
 
@@ -144,10 +157,13 @@ export function useSubscriptions() {
       if (updates.name !== undefined) updateData.name = updates.name;
       if (updates.category !== undefined) updateData.category = updates.category;
       if (updates.price !== undefined) updateData.price = updates.price;
+      if ((updates as any).priceOriginal !== undefined) updateData.price_original = (updates as any).priceOriginal;
+      if ((updates as any).currency !== undefined) updateData.currency = (updates as any).currency;
       if (updates.billingCycle !== undefined) updateData.billing_cycle = updates.billingCycle;
       if (updates.renewalDate !== undefined) updateData.renewal_date = updates.renewalDate;
       if (updates.paymentMethod !== undefined) updateData.payment_method = updates.paymentMethod;
       if (updates.notes !== undefined) updateData.notes = updates.notes;
+      if ((updates as any).status !== undefined) updateData.status = (updates as any).status;
 
       const { error } = await supabase
         .from('subscriptions')

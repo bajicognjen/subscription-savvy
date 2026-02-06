@@ -55,7 +55,7 @@ export default function Auth() {
                 <CreditCard className="h-6 w-6 text-primary-foreground" />
               </div>
             </div>
-            <h1 className="text-2xl font-bold">SubTracker</h1>
+            <h1 className="text-2xl font-bold">Wallet</h1>
             <p className="text-sm text-muted-foreground">
               {isSignUp ? 'Create an account' : 'Sign in to your account'}
             </p>
